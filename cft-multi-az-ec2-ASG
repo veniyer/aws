@@ -1,0 +1,53 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  myImageId:
+    Type: String
+    Default: <...>
+  az1subnet:
+    Type: 'List<AWS::EC2::Subnet::Id>'
+    Default: <...>
+  az2subnet:
+    Type: 'List<AWS::EC2::Subnet::Id>'
+    Default: <...>
+  min:
+    Type: String
+    Default: 1
+  max:
+    Type: String
+    Default: 1
+Resources:
+  myLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties: 
+      LaunchTemplateName: !Sub ${AWS::StackName}-launch-template
+      LaunchTemplateData: 
+        BlockDeviceMappings: 
+          - Ebs:
+              VolumeSize: 8
+            DeviceName: /dev/sdf
+        CreditSpecification: 
+          CpuCredits: Unlimited
+        ImageId: !Ref myImageId
+        InstanceType: t2.micro
+        IamInstanceProfile:
+          Arn: arn:aws:iam::<account>:instance-profile/workstation-admin-instance-role
+        KeyName: workstation-admin-keypair
+        Monitoring: 
+          Enabled: true
+        SecurityGroupIds: 
+          - <...>
+          - <...>
+  myASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: myASG
+      MinSize: !Ref min
+      MaxSize: !Ref max
+      DesiredCapacity: !Ref min
+      HealthCheckGracePeriod: 300
+      LaunchTemplate:
+        LaunchTemplateId: !Ref myLaunchTemplate
+        Version: !GetAtt myLaunchTemplate.LatestVersionNumber
+      VPCZoneIdentifier:
+        - <...>
+        - <...>
